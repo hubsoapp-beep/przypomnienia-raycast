@@ -28,7 +28,7 @@ Zero zależności zewnętrznych: czysty Python 3 (systemowy) + PyObjC, które ma
 ## Instalacja
 
 ```bash
-git clone https://github.com/netflyapp/przypomnienia-raycast.git
+git clone https://github.com/hubsoapp-beep/przypomnienia-raycast.git
 cd przypomnienia-raycast
 ./install.sh
 ```
