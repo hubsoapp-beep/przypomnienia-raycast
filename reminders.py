@@ -66,15 +66,35 @@ def edit_items():
         save(items)
 
 
+_REL = re.compile(r"^(?P<n>[0-9]+)\s*(?P<unit>[a-ząćęłńóśźż]*)$", re.IGNORECASE)
+_HOURS = {"h", "godz", "godziny", "godzin"}
+_MINUTES = {"m", "min", "minut", "minuty", "minu"}
+MAX_AHEAD = timedelta(days=366)
+
+
 def parse_when(s):
-    """'14:30' | '2026-09-24 14:30' | '+30m' | '+2h'."""
+    """'13' | '+30m' | '2h' | '14:30' | '2026-09-24 14:30'.
+
+    Sama liczba to minuty od teraz — '13' znaczy 'za 13 minut'. Kolon zawsze
+    oznacza zegar, więc '13:00' to godzina 13:00, a nie 13 minut.
+    """
     s = s.strip()
     now = datetime.now()
-    if s.startswith("+"):
-        if not re.fullmatch(r"\+[1-9][0-9]*[mh]", s):
-            raise ValueError("Podaj dodatni czas, np. +30m lub +2h")
-        n = int(s[1:-1])
-        return now + (timedelta(minutes=n) if s[-1] == "m" else timedelta(hours=n))
+    rel = _REL.match(s.lstrip("+").strip())
+    if rel:
+        n = int(rel["n"])
+        unit = rel["unit"].lower()
+        if unit in _HOURS:
+            delta = timedelta(hours=n)
+        elif unit in _MINUTES or not unit:
+            delta = timedelta(minutes=n)
+        else:
+            raise ValueError("Nieznana jednostka czasu — użyj min albo h, np. 13 albo 2h")
+        if delta <= timedelta(0):
+            raise ValueError("Podaj dodatni czas, np. 13 (13 minut) albo 2h")
+        if delta > MAX_AHEAD:
+            raise ValueError("Nie planuję tak daleko w przyszłości (max 366 dni)")
+        return now + delta
     if " " in s:
         due = datetime.strptime(s, "%Y-%m-%d %H:%M")
         if due <= now:
@@ -362,7 +382,8 @@ def main():
     commands = parser.add_subparsers(dest="cmd")
     add = commands.add_parser("add", help="Dodaj przypomnienie")
     add.add_argument("text")
-    add.add_argument("when", nargs="?", default="+60m")
+    add.add_argument("when", nargs="?", default="60",
+                     help="Czas: '13' = za 13 minut, '2h', '14:30', '2026-12-24 18:00'")
     for command in ("list", "log", "daemon", "show"):
         commands.add_parser(command)
     args = parser.parse_args()

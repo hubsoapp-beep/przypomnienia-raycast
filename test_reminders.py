@@ -29,7 +29,8 @@ class RemindersTests(unittest.TestCase):
                               capture_output=True, text=True, timeout=10)
 
     def test_time_validation(self):
-        for value in ("+5x", "+0m", "+-5m", "+2", "25:00", "", "2000-01-01 10:00"):
+        for value in ("+5x", "+0m", "+-5m", "0", "000", "5x", "25:00", "", "13 13x",
+                      "2000-01-01 10:00", "9999999"):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 reminders.parse_when(value)
         before = datetime.now()
@@ -39,6 +40,39 @@ class RemindersTests(unittest.TestCase):
         due = reminders.parse_when("00:00")
         self.assertGreater(due, datetime.now())
         self.assertEqual((due.hour, due.minute), (0, 0))
+
+    def test_bare_number_means_minutes(self):
+        for value, minutes in (("13", 13), ("1", 1), ("90", 90), (" 45 ", 45),
+                               ("+20", 20), ("13m", 13), ("13 min", 13),
+                               ("13minut", 13), ("13 MINUTY", 13)):
+            with self.subTest(value=value):
+                before = datetime.now()
+                due = reminders.parse_when(value)
+                self.assertGreaterEqual(due, before + timedelta(minutes=minutes))
+                self.assertLessEqual(due, datetime.now() + timedelta(minutes=minutes))
+
+    def test_hour_units_and_horizon(self):
+        for value, hours in (("2h", 2), ("2 h", 2), ("2godz", 2), ("2 Godziny", 2),
+                             ("+3h", 3)):
+            with self.subTest(value=value):
+                before = datetime.now()
+                due = reminders.parse_when(value)
+                self.assertGreaterEqual(due, before + timedelta(hours=hours))
+                self.assertLessEqual(due, datetime.now() + timedelta(hours=hours))
+        limit = reminders.MAX_AHEAD
+        self.assertLess(reminders.parse_when("8760h"),  # 365 dni — wciąż w limicie
+                        datetime.now() + limit + timedelta(minutes=1))
+        with self.assertRaises(ValueError):
+            reminders.parse_when("8785h")  # 366 dni + 1h — już po limicie
+
+    def test_clock_time_stays_clock_time(self):
+        # kolon jednoznacznie oznacza zegar — '13:00' to 13:00, nie 13 minut
+        for value, clock in (("13:00", (13, 0)), ("23:59", (23, 59)),
+                             ("9:05", (9, 5))):
+            with self.subTest(value=value):
+                due = reminders.parse_when(value)
+                self.assertEqual((due.hour, due.minute), clock)
+                self.assertGreater(due, datetime.now())
 
     def test_cli_validation_and_default(self):
         for args in (("add",), ("add", " "), ("add", "test", "+5x"), ("unknown",)):

@@ -50,16 +50,20 @@ W Raycast: **Przypomnienie** → wpisz treść → podaj czas:
 
 | Wpis | Znaczenie |
 |---|---|
-| `+30m` / `+2h` | za 30 minut / 2 godziny |
+| `13` | **za 13 minut** — najczęstszy przypadek, zero kombinowania |
+| `90` / `2h` / `2 godziny` | za 90 minut / 2 godziny |
+| `13m` / `13 min` | toż samo co `13` |
 | `14:30` | dzisiaj o 14:30 (już minęło → jutro) |
 | `2026-12-24 18:00` | konkretna data |
-| *(puste)* | domyślnie `+60m` |
+| *(puste)* | domyślnie `60` minut |
+
+**Kolonoznaka zawsze znaczy zegar:** `13` to 13 minut, `13:00` to godzina 13:00. Bez kolonki nie ma pomylenia.
 
 Z wiersza poleceń:
 
 ```bash
 ~/bin/przypomnienia/reminders.py list              # coś wisi
-~/bin/przypomnienia/reminders.py add "Wstań" +45m
+~/bin/przypomnienia/reminders.py add "Wstań" 13    # za 13 minut
 ~/bin/przypomnienia/reminders.py log               # historia
 tail -f /tmp/przypomnienia.log                     # log na żywo
 ```

@@ -7,8 +7,8 @@
 # @raycast.icon ⏰
 # @raycast.packageName Przypomnienia
 # @raycast.argument1 { "type": "text", "placeholder": "Treść przypomnienia" }
-# @raycast.argument2 { "type": "text", "placeholder": "14:30 lub +30m (domyślnie +60m)", "optional": true }
+# @raycast.argument2 { "type": "text", "placeholder": "13 = za 13 min · 2h · 14:30 (domyślnie 60)", "optional": true }
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-/usr/bin/python3 "$DIR/reminders.py" add "$1" "${2:-+60m}"
+/usr/bin/python3 "$DIR/reminders.py" add "$1" "${2:-60}"
